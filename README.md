@@ -117,8 +117,6 @@ module.exports = {
 
 Let's take the same example with async/await.
 
-Let's rewrite the above code using promises.
-
 ```JavaScript
 let fd = -1;
 try {
