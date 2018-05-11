@@ -72,6 +72,8 @@ but in a more compact and automatic way.
 3. The example above is flatter and easier to understand.
 4. If you don't have `fsPromise` you can simply implement one yourself. The code bellow is an implementation for the API used in the example above.
 
+(maybe you should mention https://www.npmjs.com/package/es6-promisify here?)
+
 ```JavaScript
 function open(fileName, options) {
   return new Promise((resolve, reject) => {
@@ -180,6 +182,12 @@ appendData().then(() => {
 // output: done
 ```
 
+you could also wrap it in anonymous self-executing function like 
+
+(async() => {
+  // beef
+})();
+
 - Wait, what? I got to wrap it in an async function?
 - Seems like it.
 - Wait again... you used the `fsPromise` implementation that was promisifying the `fs` API?
@@ -258,6 +266,31 @@ makeRequest()
 
 Here all 5 requests to `getArticle` will be asynchronous and will happen in parallel.
 
+If we want to implement the same parallel behavior using async/await we could do:
+
+```js
+// dummy implementation used to just illustrate the point
+(async() => {
+    const getArticle = id => {
+      return new Promise(resolve =>
+        setTimeout(() => {
+          resolve({
+            id: id,
+            name: 'Article #' + id
+          });
+        }, 500)
+      );
+    };
+
+    const getArticles = async () => Promise.all([1, 2, 3, 4, 5].map(async id => await getArticle(id)));
+
+    const articles = await getArticles();
+     
+    console.log(articles);
+})();
+```
+
+
 ### Shipping the code to older browsers.
 
 Now that we understand that the async/await version of `makeRequest` is actually a
@@ -291,6 +324,24 @@ makeRequest()
   });
 ```
 
+arguably a little more flat and simple without the need of declaring variables outside the scope (articles)
+
+```js
+(async() => {
+
+    async function serialAsyncMap(collection, fn) {
+      return Promise.all(collection.map(async item => fn(item)));
+    }
+
+    const makeRequest = async () => await serialAsyncMap([1, 2, 3, 4, 5], getArticle);
+
+    const articles = await makeRequest();
+
+    console.log(articles);
+
+})();
+```
+
 If you want to ship this code to the browser you can compile it using Babel/Regenerator.
 A harmless-looking function like `serialAsyncMap` compiles into **56** lines of code.
 
@@ -299,6 +350,7 @@ A harmless-looking function like `serialAsyncMap` compiles into **56** lines of 
 1. Mixing async/await code with sync code might look a bit weird
 2. Untill we have full browser support or we stop carrying about older browsers, shipping transpiled async/await code should be done with some considerations
 3. Your code will be less functional and you wont be able to chain execution the same way as with promisses. 
+ (maybe you can elaborate what less functional means also how you can't chain the execution)
 4. Keep in mind that `await` blocks a loop so
 ```JavaScript
 const makeRequest = async () => {
@@ -319,6 +371,14 @@ const makeRequest = () => {
   }
   return Promise.all(promises).then(res => articles = res);
 }
+```
+
+but can be achieved by
+
+```js
+const getArticles = async () => Promise.all([1, 2, 3, 4, 5].map(async id => await getArticle(id)));
+
+const articles = await getArticles();
 ```
 
 ## More on the talk
